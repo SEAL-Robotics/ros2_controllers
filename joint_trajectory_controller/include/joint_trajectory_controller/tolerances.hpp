@@ -290,11 +290,15 @@ SegmentTolerances get_segment_tolerances(
  * \param joint_idx Joint index for the state error
  * \param state_tolerance State tolerance of joint to check \p state_error against.
  * \param show_errors If the joint that violate its tolerance should be output to console. NOT
- * REALTIME if true \return True if \p state_error fulfills \p state_tolerance.
+ * REALTIME if true
+ * \param joint_name Joint name used in the error output. If empty, only the (0-based)
+ * \p joint_idx is printed.
+ * \return True if \p state_error fulfills \p state_tolerance.
  */
 inline bool check_state_tolerance_per_joint(
   const trajectory_msgs::msg::JointTrajectoryPoint & state_error, size_t joint_idx,
-  const StateTolerances & state_tolerance, bool show_errors = false)
+  const StateTolerances & state_tolerance, bool show_errors = false,
+  const std::string & joint_name = std::string())
 {
   using std::abs;
   const double error_position = state_error.positions[joint_idx];
@@ -316,7 +320,16 @@ inline bool check_state_tolerance_per_joint(
   if (show_errors)
   {
     const auto logger = rclcpp::get_logger("tolerances");
-    RCLCPP_ERROR(logger, "State tolerances failed for joint %zu:", joint_idx);
+    if (joint_name.empty())
+    {
+      RCLCPP_ERROR(logger, "State tolerances failed for joint %zu:", joint_idx);
+    }
+    else
+    {
+      RCLCPP_ERROR(
+        logger, "State tolerances failed for joint '%s' (index %zu):", joint_name.c_str(),
+        joint_idx);
+    }
 
     if (state_tolerance.position > 0.0 && abs(error_position) > state_tolerance.position)
     {
