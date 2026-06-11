@@ -215,7 +215,19 @@ controller_interface::return_type JointTrajectoryController::update(
 {
   if (scaling_state_interface_.has_value())
   {
-    scaling_factor_ = scaling_state_interface_->get().get_value();
+    const auto scaling_factor_op = scaling_state_interface_->get().get_optional();
+    if (scaling_factor_op.has_value())
+    {
+      scaling_factor_ = scaling_factor_op.value();
+    }
+    else
+    {
+      RCLCPP_WARN_THROTTLE(
+        get_node()->get_logger(), *get_node()->get_clock(), 1000,
+        "Unable to read the speed scaling factor from the state interface — keeping the "
+        "previous value %f.",
+        scaling_factor_.load());
+    }
   }
 
   if (scaling_command_interface_.has_value())
